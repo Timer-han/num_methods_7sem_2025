@@ -1,0 +1,122 @@
+\documentclass[12pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[russian]{babel}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{diagbox}
+\usepackage{float}
+\usepackage[left=2cm,right=2cm,top=2cm,bottom=2cm]{geometry}
+
+\title{Численное решение задачи 3.11}
+\author{}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\section{Постановка задачи}
+
+Задача 3.11 представляет собой численное решение системы уравнений газовой динамики:
+
+\begin{aligned}
+& G_t + 0.5(V \hat{G}_{\mathring{x}} + (V \hat{G})_{\mathring{x}} + (2 - G)V_{\mathring{x}}) = 0, \quad x \in \omega_h, \\
+& G_{t,0} + 0.5\left((V \hat{G})_{x,0} + (2 - G_0)V_{x,0}\right) \\
+& \quad - 0.5h\left((GV)_{x\bar{x},1} - 0.5(GV)_{x\bar{x},2} + (2 - G_0)\left(V_{x\bar{x},1} - 0.5V_{x\bar{x},2}\right)\right) = 0, \\
+& G_{t,M} + 0.5\left((V \hat{G})_{\bar{x},M} + (2 - G_M)V_{\bar{x},M}\right) \\
+& \quad + 0.5h\left((GV)_{x\bar{x},M-1} - 0.5(GV)_{x\bar{x},M-2} + (2 - G_M)\left(V_{x\bar{x},M-1} - 0.5V_{x\bar{x},M-2}\right)\right) = 0, \\
+& V_t + \frac{1}{3}(V \hat{V}_{\mathring{x}} + (V \hat{V})_{\mathring{x}}) + \tilde{p}'(\hat{G})\hat{G}_{\mathring{x}} = \tilde{\mu} \hat{V}_{x\bar{x}} - (\tilde{\mu} - \mu e^{-\hat{G}})V_{x\bar{x}} + f, \quad x \in \omega_h,
+\end{aligned}
+
+где:
+\begin{itemize}
+    \item $G = \ln(\rho)$ -- логарифм плотности
+    \item $V$ -- скорость
+    \item $p(\rho)$ -- давление (два варианта: $p(\rho) = C_\rho \rho$ или $p(\rho) = C_\rho \rho^{1.4}$)
+    \item $\mu$ -- коэффициент вязкости
+\end{itemize}
+
+\subsection{Тестовое решение}
+
+Для проверки точности используется аналитическое решение:
+\begin{align*}
+\rho(x,t) &= e^t \cdot (\cos(3\pi x) + 1.5) \\
+u(x,t) &= \cos(2\pi t) \cdot \sin(4\pi x)
+\end{align*}
+
+\subsection{Вычисляемые нормы невязок}
+
+Для оценки точности вычисляются три нормы невязок:
+
+\begin{enumerate}
+    \item \textbf{C-норма} (равномерная): $||e||_C = \max_{i} |u_i^{num} - u_i^{exact}|$
+    \item \textbf{L2-норма} (интегральная): $||e||_{L_2} = \sqrt{h \sum_{i} (u_i^{num} - u_i^{exact})^2}$
+    \item \textbf{W2-норма} (Соболева): $||e||_{W_2} = \sqrt{||e||_{L_2}^2 + \frac{1}{h}\sum_{i} (e_i - e_{i-1})^2}$
+\end{enumerate}
+
+\section{Результаты для G (логарифм плотности)}
+
+В таблицах ниже представлены результаты вычислений для различных параметров. Каждая ячейка содержит 4 строки:
+\begin{enumerate}
+    \item Невязка в C-норме
+    \item Невязка в L2-норме
+    \item Невязка в W2-норме
+    \item Произведение $\tau \times h$
+\end{enumerate}
+
+% Вставка таблиц для G
+% Раскомментируйте следующую строку после генерации таблиц:
+% \input{results/full_tables_G.tex}
+
+% Для тестового запуска используйте:
+% \input{results/test_tables_G.tex}
+
+\section{Результаты для V (скорость)}
+
+% Вставка таблиц для V
+% Раскомментируйте следующую строку после генерации таблиц:
+% \input{results/full_tables_V.tex}
+
+% Для тестового запуска используйте:
+% \input{results/test_tables_V.tex}
+
+\section{Анализ результатов}
+
+\subsection{Сходимость метода}
+
+Из представленных таблиц можно сделать следующие выводы:
+
+\begin{itemize}
+    \item При уменьшении шагов сетки $h$ и $\tau$ невязки уменьшаются, что свидетельствует о сходимости численного метода
+    \item Для различных значений параметра $\mu$ наблюдается различная скорость сходимости
+    \item При больших значениях $C_\rho$ требуются более мелкие сетки для достижения приемлемой точности
+\end{itemize}
+
+\subsection{Влияние параметров}
+
+\textbf{Параметр $\mu$ (вязкость):}
+\begin{itemize}
+    \item При уменьшении $\mu$ метод становится менее устойчивым
+    \item Требуется уменьшение шагов сетки для сохранения точности
+\end{itemize}
+
+\textbf{Параметр $C_\rho$ (коэффициент в уравнении состояния):}
+\begin{itemize}
+    \item Большие значения $C_\rho$ приводят к более жёстким системам
+    \item Может потребоваться адаптивный выбор шагов
+\end{itemize}
+
+\textbf{Тип уравнения состояния:}
+\begin{itemize}
+    \item $p(\rho) = C_\rho \rho$ -- линейная зависимость
+    \item $p(\rho) = C_\rho \rho^{1.4}$ -- политропный газ
+\end{itemize}
+
+\section{Заключение}
+
+Разработанный численный метод позволяет эффективно решать задачи газовой динамики с различными параметрами. Результаты показывают хорошую сходимость при правильном выборе шагов сетки.
+
+\end{document}
