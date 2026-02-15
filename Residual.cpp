@@ -1,71 +1,38 @@
 #include "matrix.h"
 #include <cmath>
+#include <algorithm>
 
-double norma_c(std::vector<double> vec, int Dim)
+double find_norm_c(const std::vector<double> &v)
 {
-  int m;
-  double n_c, tmp;
-  n_c = fabs (vec[0]);
-  for(m=1; m<Dim; m++)
-     {
-        tmp = fabs (vec[m]);
-        if (n_c < tmp) n_c=tmp;
-     }
-  return n_c;
+    double mx = 0;
+    for (size_t i = 0; i < v.size(); i++)
+        mx = std::max(mx, std::abs(v[i]));
+    return mx;
 }
 
-double norma_l(std::vector<double> vec,int Dim, double h)
+double find_norm(const std::vector<double> &v)
 {
-  int m;
-  double n_l, tmp;
-  n_l = vec[0] * vec[0];
-  for (m = 1; m < Dim; m++)
-     {
-        n_l += vec[m] * vec[m];
-     }
-  return sqrt (h * n_l);
+    double mx = 0, h = 1. / (v.size() - 1);
+    for (size_t i = 0; i < v.size(); i++)
+        mx += v[i] * v[i];
+    return std::sqrt(mx * h);
 }
 
-double norma_w(std::vector<double> vec,int Dim,double h)
+double find_norm_L2h(const std::vector<double> &v)
 {
-  int m;
-  double n_l, n_w, tmp;
-  n_l = vec[0]*vec[0];
-  n_w = 0;
-  for (m = 1; m < Dim; m++)
-     {
-        n_l += vec[m] * vec[m];
-        n_w += (vec[m] - vec[m - 1]) * (vec[m] - vec[m - 1]);
-     }
-  return sqrt (h * n_l + n_w / h);
+    double mx = find_norm(v), h = 1. / (v.size() - 1);
+    mx = mx * mx / h;
+    for (size_t i = 0; i < v.size(); i++)
+        mx += 0.5 * v[i] * v[i];
+    return std::sqrt(mx * h);
 }
 
-double get_residual_C(std::vector<double> original, std::vector<double> divided, int orig_steps, int mult)
+double find_norm_12(const std::vector<double> &v)
 {
-  for (int i = 0; i <= orig_steps; i++)
-    {
-      original[i] -= divided[i * mult];
-    }
-
-    return norma_c(original, orig_steps+1);
-}
-
-double get_residual_l2(std::vector<double> original, std::vector<double> divided, int orig_steps, int mult)
-{
-  for (int i = 0; i <= orig_steps; i++)
-    {
-      original[i] -= divided[i * mult];
-    }
-
-    return norma_l(original, orig_steps+1, 1./orig_steps);
-}
-
-double get_residual_w2(std::vector<double> original, std::vector<double> divided, int orig_steps, int mult)
-{
-  for (int i = 0; i <= orig_steps; i++)
-    {
-      original[i] -= divided[i * mult];
-    }
-
-    return norma_w(original, orig_steps+1, 1./orig_steps);
+    double mx = 0, h = 1. / (v.size() - 1);
+    for (size_t i = 0; i < v.size() - 1; i++)
+        mx += v[i] * v[i];
+    mx *= h;
+    double L2h = find_norm_L2h(v);
+    return std::sqrt(mx + L2h * L2h);
 }

@@ -27,7 +27,8 @@ class Matrix
   double get_mu ();
   double calc_nev_C (solver_mode mode);
   double calc_nev_l2 (solver_mode mode);
-  double calc_nev_w2 (solver_mode mode, double res_l2);
+  double calc_nev_l2h (solver_mode mode);
+  double calc_nev_w2 (solver_mode mode);
   void calc_and_print_all_res(solver_mode mode);
   void calc_and_print_all_res_tex(solver_mode mode, char *filename);
 
@@ -38,12 +39,8 @@ class Matrix
   void run_task ();
 };
 
-// Функции для вычисления норм
-double norma_c(std::vector<double> vec, int Dim);
-double norma_l(std::vector<double> vec, int Dim, double h);
-double norma_w(std::vector<double> vec, int Dim, double h);
-
-// Функции для вычисления невязок
-double get_residual_C(std::vector<double> original, std::vector<double> divided, int orig_steps, int mult);
-double get_residual_l2(std::vector<double> original, std::vector<double> divided, int orig_steps, int mult);
-double get_residual_w2(std::vector<double> original, std::vector<double> divided, int orig_steps, int mult);
+// Новые функции для вычисления норм
+double find_norm_c(const std::vector<double> &v);
+double find_norm(const std::vector<double> &v);
+double find_norm_L2h(const std::vector<double> &v);
+double find_norm_12(const std::vector<double> &v);

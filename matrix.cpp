@@ -192,91 +192,94 @@ void Matrix::run_task ()
 
 double Matrix::calc_nev_C (solver_mode mode)
 {
-  double max = 0;
-  int max_i = -1;
+  std::vector<double> error_vec(Dim);
+  
   for (int i = 0; i < Dim; i++)
     {
       double x = scheme.h_x * i;
       double tau = scheme.tau * step;
+      
       if (mode == solver_mode::G)
-        {
-          if (fabs(solution_G[i] - log (rho (x,tau))) > max)
-            {
-              max = fabs(solution_G[i] - log (rho (x,tau)));
-              max_i = i;
-            }
-        }
-        else
-          {
-            if (fabs (solution_V[i] - u (x, tau)) > max)
-              {
-                max = fabs (solution_V[i] - u (x, tau));
-                max_i = i;
-              }
-          }
+        error_vec[i] = solution_G[i] - log(rho(x, tau));
+      else
+        error_vec[i] = solution_V[i] - u(x, tau);
     }
 
-  return max;
+  return find_norm_c(error_vec);
 }
 
 double Matrix::calc_nev_l2 (solver_mode mode)
 {
-  double sum = 0;
+  std::vector<double> error_vec(Dim);
+  
   for (int i = 0; i < Dim; i++)
     {
       double x = scheme.h_x * i;
       double tau = scheme.tau * step;
 
       if (mode == solver_mode::G)
-        sum += (solution_G[i] - log (rho (x,tau))) *
-               (solution_G[i] - log (rho (x,tau)));
-        else
-          sum += (solution_V[i] - u (x, tau)) * (solution_V[i] - u (x, tau));
+        error_vec[i] = solution_G[i] - log(rho(x, tau));
+      else
+        error_vec[i] = solution_V[i] - u(x, tau);
     }
-    sum = sum * scheme.h_x;
-    return sqrt(sum);
+    
+  return find_norm(error_vec);
 }
 
-double Matrix::calc_nev_w2 (solver_mode mode, double res_l2)
+double Matrix::calc_nev_l2h (solver_mode mode)
 {
-  double sum = 0;
-  double tau = scheme.tau * step;
-  double prev_res = (mode == solver_mode::G) ? (solution_G[0] - log (rho (0, tau))) :
-                                               (solution_V[0] - u (0, tau));
-  for (int i = 1; i < Dim; i++)
+  std::vector<double> error_vec(Dim);
+  
+  for (int i = 0; i < Dim; i++)
     {
       double x = scheme.h_x * i;
-      double res{};
+      double tau = scheme.tau * step;
 
       if (mode == solver_mode::G)
-        res = (solution_G[i] - log (rho (x,tau)));
+        error_vec[i] = solution_G[i] - log(rho(x, tau));
       else
-        res = (solution_V[i] - u (x, tau));
-
-      sum += (res - prev_res) *
-             (res - prev_res);
-      prev_res = res;
+        error_vec[i] = solution_V[i] - u(x, tau);
     }
-    sum = res_l2 * res_l2 + sum / scheme.h_x;
-    return sqrt (sum);
+    
+  return find_norm_L2h(error_vec);
+}
+
+double Matrix::calc_nev_w2 (solver_mode mode)
+{
+  std::vector<double> error_vec(Dim);
+  
+  for (int i = 0; i < Dim; i++)
+    {
+      double x = scheme.h_x * i;
+      double tau = scheme.tau * step;
+
+      if (mode == solver_mode::G)
+        error_vec[i] = solution_G[i] - log(rho(x, tau));
+      else
+        error_vec[i] = solution_V[i] - u(x, tau);
+    }
+    
+  return find_norm_12(error_vec);
 }
 
 void Matrix::calc_and_print_all_res(solver_mode mode)
 {
   double C_res = calc_nev_C (mode);
   double l2_res = calc_nev_l2 (mode);
-  double w2_res = calc_nev_w2 (mode, l2_res);
-  printf ("\nMODE %d step %d C_RES = %lf L2_RES = %lf W2_RES = %lf\n",
-          static_cast<bool>(mode), step, C_res, l2_res, w2_res);
+  double l2h_res = calc_nev_l2h (mode);
+  double w2_res = calc_nev_w2 (mode);
+  printf ("\nMODE %d step %d C_RES = %lf L2_RES = %lf L2H_RES = %lf W2_RES = %lf\n",
+          static_cast<bool>(mode), step, C_res, l2_res, l2h_res, w2_res);
 }
 
 void Matrix::calc_and_print_all_res_tex(solver_mode mode, char *filename)
 {
   double C_res = calc_nev_C (mode);
   double l2_res = calc_nev_l2 (mode);
-  double w2_res = calc_nev_w2 (mode, l2_res);
+  double l2h_res = calc_nev_l2h (mode);
+  double w2_res = calc_nev_w2 (mode);
   FILE *file = fopen(filename, "a");
-  fprintf(file, "$%.3le$ $%.3le$ $%.3le$ ",C_res, l2_res, w2_res);
+  fprintf(file, "$%.3le$ $%.3le$ $%.3le$ $%.3le$ ",C_res, l2_res, l2h_res, w2_res);
   if (Dim -1 != 10000)
     fprintf(file,"&");
   fclose(file);

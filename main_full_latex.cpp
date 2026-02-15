@@ -61,10 +61,9 @@ int main(int argc, char const *argv[])
                     int N = (int)(1.0 / tau);
                     
                     // Собираем все результаты для данного tau
-                    std::vector<double> C_res_G_vec, l2_res_G_vec, w2_res_G_vec;
-                    std::vector<double> C_res_V_vec, l2_res_V_vec, w2_res_V_vec;
-                    std::vector<double> time_vec;
-                    
+                    std::vector<double> C_res_G_vec, l2_res_G_vec, l2h_res_G_vec, w2_res_G_vec;
+                    std::vector<double> C_res_V_vec, l2_res_V_vec, l2h_res_V_vec, w2_res_V_vec;
+
                     for (double h_x : h_values) {
                         int M_x = (int)(1.0 / h_x);
                         
@@ -80,33 +79,36 @@ int main(int argc, char const *argv[])
                             
                             double C_res_G = matrix.calc_nev_C(solver_mode::G);
                             double l2_res_G = matrix.calc_nev_l2(solver_mode::G);
-                            double w2_res_G = matrix.calc_nev_w2(solver_mode::G, l2_res_G);
-                            
+                            double l2h_res_G = matrix.calc_nev_l2h(solver_mode::G);
+                            double w2_res_G = matrix.calc_nev_w2(solver_mode::G);
+
                             double C_res_V = matrix.calc_nev_C(solver_mode::V);
                             double l2_res_V = matrix.calc_nev_l2(solver_mode::V);
-                            double w2_res_V = matrix.calc_nev_w2(solver_mode::V, l2_res_V);
-                            
+                            double l2h_res_V = matrix.calc_nev_l2h(solver_mode::V);
+                            double w2_res_V = matrix.calc_nev_w2(solver_mode::V);
+
                             C_res_G_vec.push_back(C_res_G);
                             l2_res_G_vec.push_back(l2_res_G);
+                            l2h_res_G_vec.push_back(l2h_res_G);
                             w2_res_G_vec.push_back(w2_res_G);
-                            
+
                             C_res_V_vec.push_back(C_res_V);
                             l2_res_V_vec.push_back(l2_res_V);
+                            l2h_res_V_vec.push_back(l2h_res_V);
                             w2_res_V_vec.push_back(w2_res_V);
-                            
-                            time_vec.push_back(tau * h_x);
-                            
+
                             std::cout << " ✓" << std::endl;
                             
                         } catch (...) {
-                            std::cout << " ✗ (error)" << std::endl;
-                            C_res_G_vec.push_back(-1);
-                            l2_res_G_vec.push_back(-1);
-                            w2_res_G_vec.push_back(-1);
-                            C_res_V_vec.push_back(-1);
-                            l2_res_V_vec.push_back(-1);
-                            w2_res_V_vec.push_back(-1);
-                            time_vec.push_back(tau * h_x);
+                                std::cout << " ✗ (error)" << std::endl;
+                                C_res_G_vec.push_back(-1);
+                                l2_res_G_vec.push_back(-1);
+                                l2h_res_G_vec.push_back(-1);
+                                w2_res_G_vec.push_back(-1);
+                                C_res_V_vec.push_back(-1);
+                                l2_res_V_vec.push_back(-1);
+                                l2h_res_V_vec.push_back(-1);
+                                w2_res_V_vec.push_back(-1);
                         }
                     }
                     
@@ -115,57 +117,65 @@ int main(int argc, char const *argv[])
                     result_file_V.precision(6);
                     
                     // Строка 1: tau и C-нормы
+                    // Строка 1: C-нормы
                     result_file << "$" << tau << "$ ";
                     result_file_V << "$" << tau << "$ ";
-                    for (size_t i = 0; i < C_res_G_vec.size(); i++) {
+                    for (size_t i = 0; i < C_res_G_vec.size(); i++)
+                    {
                         result_file << "& $" << std::scientific << C_res_G_vec[i] << "$ ";
                         result_file_V << "& $" << std::scientific << C_res_V_vec[i] << "$ ";
                     }
                     result_file << "\\\\\n";
                     result_file_V << "\\\\\n";
-                    
+
                     // Строка 2: L2-нормы
                     result_file << "& ";
                     result_file_V << "& ";
-                    for (size_t i = 0; i < l2_res_G_vec.size(); i++) {
+                    for (size_t i = 0; i < l2_res_G_vec.size(); i++)
+                    {
                         result_file << "$" << std::scientific << l2_res_G_vec[i] << "$ ";
                         result_file_V << "$" << std::scientific << l2_res_V_vec[i] << "$ ";
-                        if (i < l2_res_G_vec.size() - 1) {
+                        if (i < l2_res_G_vec.size() - 1)
+                        {
                             result_file << "& ";
                             result_file_V << "& ";
                         }
                     }
                     result_file << "\\\\\n";
                     result_file_V << "\\\\\n";
-                    
-                    // Строка 3: W2-нормы
+
+                    // Строка 3: L2h-нормы
                     result_file << "& ";
                     result_file_V << "& ";
-                    for (size_t i = 0; i < w2_res_G_vec.size(); i++) {
+                    for (size_t i = 0; i < l2h_res_G_vec.size(); i++)
+                    {
+                        result_file << "$" << std::scientific << l2h_res_G_vec[i] << "$ ";
+                        result_file_V << "$" << std::scientific << l2h_res_V_vec[i] << "$ ";
+                        if (i < l2h_res_G_vec.size() - 1)
+                        {
+                            result_file << "& ";
+                            result_file_V << "& ";
+                        }
+                    }
+                    result_file << "\\\\\n";
+                    result_file_V << "\\\\\n";
+
+                    // Строка 4: W2-нормы
+                    result_file << "& ";
+                    result_file_V << "& ";
+                    for (size_t i = 0; i < w2_res_G_vec.size(); i++)
+                    {
                         result_file << "$" << std::scientific << w2_res_G_vec[i] << "$ ";
                         result_file_V << "$" << std::scientific << w2_res_V_vec[i] << "$ ";
-                        if (i < w2_res_G_vec.size() - 1) {
+                        if (i < w2_res_G_vec.size() - 1)
+                        {
                             result_file << "& ";
                             result_file_V << "& ";
                         }
                     }
                     result_file << "\\\\\n";
                     result_file_V << "\\\\\n";
-                    
-                    // Строка 4: времена (tau * h)
-                    result_file << "& ";
-                    result_file_V << "& ";
-                    for (size_t i = 0; i < time_vec.size(); i++) {
-                        result_file << "$" << std::scientific << time_vec[i] << "$ ";
-                        result_file_V << "$" << std::scientific << time_vec[i] << "$ ";
-                        if (i < time_vec.size() - 1) {
-                            result_file << "& ";
-                            result_file_V << "& ";
-                        }
-                    }
-                    result_file << "\\\\\n";
-                    result_file_V << "\\\\\n";
-                    
+
                     result_file << "\\hline\n";
                     result_file_V << "\\hline\n";
                 }
